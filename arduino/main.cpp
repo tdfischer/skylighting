@@ -5,6 +5,43 @@
 #include "animation.h"
 #include "colors.h"
 
+class HouselightsAnimation : public Animation {
+public:
+  HouselightsAnimation(LPD8806* strip) :
+    Animation(strip, 10)
+  {}
+
+  void redraw()
+  {
+    for(int i = 0; i < strip().numPixels();i++) {
+      strip().setPixelColor (i, random (230, 255), random (230, 255), random (230, 255));
+    }
+    strip().show();
+    delay(1000);
+    end();
+  }
+};
+
+class DirectionAnimation : public Animation {
+public:
+  DirectionAnimation(LPD8806* strip) :
+    Animation(strip)
+  {}
+
+  uint8_t hue;
+
+  void redraw()
+  {
+    int pos = idx() % strip().numPixels();
+    hue++;
+    for (int i = 0; i < strip().numPixels(); i++) {
+      strip().setPixelColor (i, wheel (hue, 255 * ((pos-i)/(double)strip().numPixels()), strip()));
+    }
+    strip().show();
+    delay(30);
+  }
+};
+
 class DropAnimation : public Animation {
 public:
   DropAnimation(LPD8806* strip) :
