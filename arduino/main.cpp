@@ -1,5 +1,6 @@
 #include <SoftwareSerial.h>
 #include <LPD8806.h>
+#include <XBee.h>
 
 #include "graviton.h"
 #include "animation.h"
@@ -97,39 +98,83 @@ public:
   }
 };
 
-bool paused = false;
+int animLoops = 500;
+
+LPD8806 strip(32);
+DropAnimation idleAnim (&strip);
+HouselightsAnimation houselightsAnim (&strip);
+DirectionAnimation directionAnim (&strip);
+Animation* anim (&houselightsAnim);
 
 GravitonVariant*
 do_idle(int argc, const GravitonMethodArg* argv)
 {
-  paused = false;
-  Serial.println("IDLE");
+  anim = &idleAnim;
   return NULL;
 }
 
 GravitonVariant*
-do_tweak(int argc, const GravitonMethodArg* argv)
+do_directional(int argc, const GravitonMethodArg* argv)
 {
-  paused = !paused;
+  animLoops = 15;
+  anim = &directionAnim;
+  return NULL;
+}
+
+GravitonVariant*
+do_houselights(int argc, const GravitonMethodArg* argv)
+{
+  anim = &houselightsAnim;
   return NULL;
 }
 
 GravitonMethod methods[] = {
   { "idle", do_idle },
-  { "tweak", do_tweak }
+  { "directional", do_directional },
+  { "houselights", do_houselights }
 };
 
-Graviton graviton (&Serial, methods, 2);
+class GravitonXBeeReader : public GravitonReader {
+public:
+  GravitonXBeeReader (XBee* xbee) :
+    m_xbee (xbee)
+  {}
 
-SoftwareSerial ser = SoftwareSerial(2, 3);
+  void serialEvent()
+  {
+    m_xbee->readPacket();
+    if (m_xbee->getResponse().isAvailable()) {
+      if (m_xbee->getResponse().getApiId() == RX_64_RESPONSE) {
+        Rx64Response rx;
+        uint8_t* pktBuf;
+        m_xbee->getResponse().getRx64Response (rx);
+        pktBuf = rx.getData();
+        for (int i = 0; i < rx.getDataLength(); i++) {
+          appendBuffer (pktBuf[i]);
+        }
+      }
+    }
+  }
 
-LPD8806 strip(32);
-DropAnimation idleAnim (&strip);
-Animation* anim (&idleAnim);
+private:
+  XBee* m_xbee;
+};
+
+XBee bee;
+
+GravitonXBeeReader reader (&bee);
+
+Graviton graviton (&reader, methods, 3);
+
+SoftwareSerial ser (2, 3);
 
 void setup() {
-  Serial.begin(9600);
+  ser.begin (9600);
+  bee.setSerial (ser);
   strip.begin();
+  randomSeed (analogRead(0));
+  idleAnim.hue = random (255);
+  directionAnim.hue = random (255);
   unsigned int i;
   for (i = 0; i < strip.numPixels(); i++) {
     strip.setPixelColor (i, 0);
@@ -148,5 +193,5 @@ void loop()
 }
 
 void serialEvent() {
-  graviton.serialEvent ();
+  reader.serialEvent ();
 }
