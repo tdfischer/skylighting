@@ -5,19 +5,22 @@ GravitonPacket::GravitonPacket() :
 {
 }
 
-GravitonReader::GravitonReader(Stream* stream) :
-  m_stream (stream),
+GravitonReader::GravitonReader() :
+  m_buf (""),
+  m_bufHead (0),
+  m_bufTail (0),
   m_curPacketBuf (0),
   m_lastPacketBuf (0),
   m_parserState (Empty)
 {
+  m_buf.reserve (sizeof (m_streamBuf));
 }
 
 void
-GravitonReader::serialEvent()
+GravitonReader::handleBuffer()
 {
-  while (m_stream->available()) {
-    char charIn = (char)m_stream->read();
+  while (m_bufHead != m_bufTail) {
+    unsigned char charIn = m_streamBuf[m_bufHead];
     GravitonPacket& cur = m_packets[m_curPacketBuf];
     switch (m_parserState) {
       case Empty:
@@ -39,19 +42,29 @@ GravitonReader::serialEvent()
       case MethodCallName:
         m_tokenLength--;
         m_buf += charIn;
-        if (m_tokenLength == 0) {
+        if (m_tokenLength <= 0) {
           m_buf.toCharArray (cur.payload.methodCall.methodName, sizeof (cur.payload.methodCall.methodName));
           m_parserState = Done;
         }
         break;
     }
-
-    if (m_parserState == Done)
+    if (m_parserState == Done) {
       cur.valid = true;
-
-    if (cur.valid)
       m_curPacketBuf++;
+      m_parserState = Empty;
+    }
+
+    m_bufHead++;
+    m_bufHead %= sizeof (m_streamBuf);
   }
+}
+
+void
+GravitonReader::appendBuffer(unsigned char c)
+{
+  m_streamBuf[m_bufTail] = c;
+  m_bufTail++;
+  m_bufTail %= sizeof (m_streamBuf);
 }
 
 bool
@@ -68,8 +81,8 @@ GravitonReader::readPacket()
   return m_packets[m_lastPacketBuf++];
 }
 
-Graviton::Graviton(Stream* stream, const GravitonMethod* methods, int methodCount) :
-  m_reader (stream),
+Graviton::Graviton(GravitonReader* reader, const GravitonMethod* methods, int methodCount) :
+  m_reader (reader),
   m_methods (methods),
   m_methodCount (methodCount)
 {
@@ -89,8 +102,9 @@ Graviton::callMethod(const GravitonMethodCallPayload& payload)
 void
 Graviton::loop()
 {
-  if (m_reader.hasPacket()) {
-    GravitonPacket pkt = m_reader.readPacket();
+  m_reader->handleBuffer();
+  if (m_reader->hasPacket()) {
+    GravitonPacket pkt = m_reader->readPacket();
     switch (pkt.type) {
       /*case GravitonPacket::PropertySet:
         setProperty (pkt.payload.propertySet);
@@ -104,10 +118,4 @@ Graviton::loop()
         break;
     }
   }
-}
-
-void
-Graviton::serialEvent()
-{
-  m_reader.serialEvent ();
 }

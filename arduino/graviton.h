@@ -64,8 +64,8 @@ struct GravitonPacket {
 
 class GravitonReader {
 public:
-  GravitonReader(Stream* stream);
-  void serialEvent();
+  GravitonReader();
+  void handleBuffer();
   bool hasPacket();
   GravitonPacket& readPacket();
 
@@ -76,9 +76,14 @@ public:
     Done
   };
 
+protected:
+  void appendBuffer(unsigned char c);
+
 private:
-  Stream* m_stream;
   String m_buf;
+  unsigned char m_streamBuf[128];
+  int m_bufHead;
+  int m_bufTail;
   int m_curPacketBuf;
   int m_lastPacketBuf;
   GravitonPacket m_packets[PACKET_RINGBUF_SIZE];
@@ -88,17 +93,16 @@ private:
 
 class Graviton {
 public:
-  Graviton(Stream* stream, const GravitonMethod* methods, int methodCount);
+  Graviton(GravitonReader* reader, const GravitonMethod* methods, int methodCount);
 
   void setProperty(const GravitonPropertySetPayload& payload);
   void getProperty(const GravitonPropertyGetPayload& payload);
   void callMethod(const GravitonMethodCallPayload& payload);
   void loop();
-  void serialEvent();
 
 private:
   String m_buf;
-  GravitonReader m_reader;
+  GravitonReader* m_reader;
   const GravitonMethod* m_methods;
   const int m_methodCount;
 };
