@@ -21,15 +21,30 @@ public:
 
   void redraw()
   {
-    uint32_t curColor = wheel (hue, strip());
+    uint32_t curColor = wheel (hue, 255, strip());
 
     width += dir;
     if (width >= strip().numPixels()) {
       dir *= -1;
     } else if (width == 0) {
+      for (int b = 255; b > 0; b--) {
+        curColor = wheel (hue, b, strip());
+        for(int i = 0; i < strip().numPixels(); i++) {
+          strip().setPixelColor (i, curColor);
+        }
+        strip().show();
+        delay(30);
+      }
+
       pos += strip().numPixels() / 5;
       hue += 255/6;
       dir *= -1;
+
+      for (int b = 128; b > 0; b-=2) {
+        strip().setPixelColor (pos, b, b, b);
+        strip().show();
+        delay(5);
+      }
     }
 
     pos %= strip().numPixels();
@@ -87,9 +102,12 @@ void setup() {
 
 void loop()
 {
+  if (anim->isFinished()) {
+    anim->reset();
+    anim = &idleAnim;
+  }
   graviton.loop();
-  if (!paused)
-    anim->step();
+  anim->step();
 }
 
 void serialEvent() {
