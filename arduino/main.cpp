@@ -14,7 +14,7 @@ public:
 
   void redraw()
   {
-    for(int i = 0; i < strip().numPixels();i++) {
+    for(unsigned int i = 0; i < strip().numPixels();i++) {
       strip().setPixelColor (i, random (230, 255), random (230, 255), random (230, 255));
     }
     strip().show();
@@ -35,7 +35,7 @@ public:
   {
     int pos = idx() % strip().numPixels();
     hue++;
-    for (int i = 0; i < strip().numPixels(); i++) {
+    for (unsigned int i = 0; i < strip().numPixels(); i++) {
       strip().setPixelColor (i, wheel (hue, 255 * ((pos-i)/(double)strip().numPixels()), strip()));
     }
     strip().show();
@@ -65,9 +65,9 @@ public:
     if (width >= strip().numPixels()) {
       dir *= -1;
     } else if (width == 0) {
-      for (int b = 255; b > 0; b--) {
+      for (unsigned int b = 255; b > 0; b--) {
         curColor = wheel (hue, b, strip());
-        for(int i = 0; i < strip().numPixels(); i++) {
+        for(unsigned int i = 0; i < strip().numPixels(); i++) {
           strip().setPixelColor (i, curColor);
         }
         strip().show();
@@ -87,8 +87,8 @@ public:
 
     pos %= strip().numPixels();
 
-    for (int i = 0; i < strip().numPixels(); i++) {
-      if (i >= (int)(pos - width) && i <= (int)(pos + width))
+    for (unsigned int i = 0; i < strip().numPixels(); i++) {
+      if (i >= (unsigned int)(pos - width) && i <= (unsigned int)(pos + width))
         strip().setPixelColor (i, curColor);
     }
 
