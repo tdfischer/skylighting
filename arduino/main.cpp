@@ -134,6 +134,14 @@ GravitonMethod methods[] = {
   { "houselights", do_houselights }
 };
 
+GravitonService services[] = {
+  {
+    "net.phrobo.brilliance.linear",
+    3,
+    methods
+  }
+};
+
 class GravitonXBeeReader : public GravitonReader {
 public:
   GravitonXBeeReader (XBee* xbee) :
@@ -155,6 +163,10 @@ public:
       }
     }
   }
+  
+  void reply (const GravitonPacket& pkt, GravitonVariant* ret)
+  {
+  }
 
 private:
   XBee* m_xbee;
@@ -164,7 +176,7 @@ XBee bee;
 
 GravitonXBeeReader reader (&bee);
 
-Graviton graviton (&reader, methods, 3);
+Graviton graviton (&reader, services, 1);
 
 SoftwareSerial ser (2, 3);
 

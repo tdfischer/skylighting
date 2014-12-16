@@ -2,6 +2,10 @@
 #include <Stream.h>
 
 struct GravitonVariant {
+  GravitonVariant(const char* str) :
+    type (Integer),
+    value (str) {}
+
   enum Type {
     Integer,
     String
@@ -9,9 +13,10 @@ struct GravitonVariant {
 
   Type type;
 
-  union {
+  union v {
     int asInt;
-    char asString[16];
+    const char *asString;
+    v(const char* str) : asString (str) {}
   } value;
 };
 
@@ -30,7 +35,14 @@ struct GravitonMethod {
   const GravitonMethodFunc func;
 };
 
+struct GravitonService {
+  const char name[48];
+  int methodCount;
+  const GravitonMethod* methods;
+};
+
 struct GravitonMethodCallPayload {
+  char serviceName[48];
   char methodName[16];
   GravitonMethodArg args[5];
 };
@@ -68,6 +80,7 @@ public:
   void handleBuffer();
   bool hasPacket();
   GravitonPacket& readPacket();
+  virtual void reply (const GravitonPacket& pkt, GravitonVariant* ret) = 0;
 
   enum ParserState {
     Empty,
@@ -93,17 +106,17 @@ private:
 
 class Graviton {
 public:
-  Graviton(GravitonReader* reader, const GravitonMethod* methods, int methodCount);
+  Graviton(GravitonReader* reader, const GravitonService* services, int serviceCount);
 
   void setProperty(const GravitonPropertySetPayload& payload);
   void getProperty(const GravitonPropertyGetPayload& payload);
-  void callMethod(const GravitonMethodCallPayload& payload);
+  GravitonVariant* callMethod(const GravitonMethodCallPayload& payload);
   void loop();
 
 private:
   String m_buf;
   GravitonReader* m_reader;
-  const GravitonMethod* m_methods;
-  const int m_methodCount;
+  const GravitonService* m_services;
+  const int m_serviceCount;
 };
 

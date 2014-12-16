@@ -55,7 +55,7 @@ GravitonReader::handleBuffer()
     }
 
     m_bufHead++;
-    m_bufHead %= sizeof (m_streamBuf);
+    m_bufHead %= 128;
   }
 }
 
@@ -64,7 +64,7 @@ GravitonReader::appendBuffer(unsigned char c)
 {
   m_streamBuf[m_bufTail] = c;
   m_bufTail++;
-  m_bufTail %= sizeof (m_streamBuf);
+  m_bufTail %= 128;
 }
 
 bool
@@ -81,22 +81,29 @@ GravitonReader::readPacket()
   return m_packets[m_lastPacketBuf++];
 }
 
-Graviton::Graviton(GravitonReader* reader, const GravitonMethod* methods, int methodCount) :
+Graviton::Graviton(GravitonReader* reader, const GravitonService* services, int serviceCount) :
   m_reader (reader),
-  m_methods (methods),
-  m_methodCount (methodCount)
+  m_services (services),
+  m_serviceCount (serviceCount)
 {
 }
 
-void
+GravitonVariant*
 Graviton::callMethod(const GravitonMethodCallPayload& payload)
 {
   int i;
-  for (i = 0; i < m_methodCount; i++) {
-    if (strcmp (m_methods[i].name, payload.methodName) == 0) {
-      m_methods[i].func(0, 0);
+  int j;
+  for (i = 0; i < m_serviceCount; i++) {
+    if (strcmp (m_services[i].name, payload.serviceName) == 0) {
+      const GravitonService& svc = m_services[i];
+      for (j = 0; j < svc.methodCount; j++) {
+        if (strcmp (svc.methods[i].name, payload.methodName) == 0) {
+          return svc.methods[i].func(0, 0);
+        }
+      }
     }
   }
+  return nullptr;
 }
 
 void
@@ -113,9 +120,29 @@ Graviton::loop()
         getProperty (pkt.payload.propertyGet);
         break;*/
       case GravitonPacket::MethodCall:
-        callMethod (pkt.payload.methodCall);
+        m_reader->reply (pkt, callMethod (pkt.payload.methodCall));
       default:
         break;
     }
   }
 }
+
+
+GravitonVariant*
+do_ping(int argc, const GravitonMethodArg* arg)
+{
+  static GravitonVariant ret ( "pong" );
+  return &ret;
+}
+
+static const GravitonMethod introspectionMethods[] = {
+  { "ping", do_ping},
+};
+
+static const GravitonService introspectionService = {
+  "net.phrobo.graviton.introspection",
+  1,
+  introspectionMethods
+};
+
+const GravitonService* GravitonIntrospectionService (&introspectionService);
