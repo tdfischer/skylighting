@@ -42,6 +42,8 @@ The Software
    tracker**
 -  `Graviton <http://git.phrobo.net/cgit/graviton.git/>`__ -
    Internet+RPI network control, interactivity, and discoverability
+-  `Graviton-arduino <http://git.phrobo.net/cgit/graviton-arduino.git/>`__ -
+    Port of Graviton to Arduino
 -  `gpiotty <https://github.com/phrobo/gpiotty>`__ - RPI+ZigBee
    connectivity
 
@@ -66,16 +68,16 @@ The Plan
 This is being developed by User:Tdfischer using the following
 milestones. Help is welcome and encouraged :)
 
-#. Blink some LED lights via Arduino - First prototype
-#. XBee to XBee communications between two linux systems over USB -
-   Establish control environment
-#. XBee to XBee communications over RaspberryPi GPIO pins - Development
-   of gpiotty
-#. XBee to Arduino communications - Wireless control prototype
-#. Skylight power supply - Hardware design
-#. Realtime display update protocol - Development of Graviton/implement
-   pixelpusher
-#. Control interfaces - Providing an API for super neat interactivity
+# Blink some LED lights via Arduino - First prototype
+# XBee to XBee communications between two linux systems over USB -
+  Establish control environment
+# XBee to XBee communications over RaspberryPi GPIO pins - Development
+  of gpiotty
+# XBee to Arduino communications - Wireless control prototype
+# Skylight power supply - Hardware design
+# Realtime display update protocol - Development of Graviton/implement
+  pixelpusher
+# Control interfaces - Providing an API for super neat interactivity
 
 Parts Needed
 ============
