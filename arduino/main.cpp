@@ -1,8 +1,9 @@
 #include <SoftwareSerial.h>
 #include <LPD8806.h>
 #include <XBee.h>
+#include <Graviton.h>
+#include <graviton-xbee-reader.h>
 
-#include "graviton.h"
 #include "animation.h"
 #include "colors.h"
 
@@ -143,74 +144,6 @@ GravitonService services[2] = {
     methods
   },
   Graviton::introspectionService
-};
-
-class GravitonStreamReader : public GravitonReader {
-public:
-  GravitonStreamReader (Stream& s) :
-    m_stream (s)
-  {}
-
-  void serialEvent()
-  {
-    while (m_stream.available()) {
-      char c = m_stream.read();
-      if (c == -1) {
-        resetParser();
-      } else {
-        appendBuffer (c);
-      }
-    }
-  }
-
-  void reply (const GravitonPacket& pkt, GravitonVariant* ret)
-  {
-    uint8_t b = ret->type;
-    m_stream.write ((uint8_t*)&b, sizeof (b));
-    switch (ret->type) {
-      case GravitonVariant::Null:
-        break;
-      case GravitonVariant::Integer:
-        m_stream.write ((uint8_t*)&ret->value.asInt, sizeof (ret->value.asInt));
-        break;
-      case GravitonVariant::String:
-        m_stream.write ((uint8_t*)ret->value.asString, strlen (ret->value.asString)+1);
-        break;
-    }
-  }
-
-private:
-  Stream& m_stream;
-};
-
-class GravitonXBeeReader : public GravitonReader {
-public:
-  GravitonXBeeReader (XBee* xbee) :
-    m_xbee (xbee)
-  {}
-
-  void serialEvent()
-  {
-    m_xbee->readPacket();
-    if (m_xbee->getResponse().isAvailable()) {
-      if (m_xbee->getResponse().getApiId() == RX_64_RESPONSE) {
-        Rx64Response rx;
-        uint8_t* pktBuf;
-        m_xbee->getResponse().getRx64Response (rx);
-        pktBuf = rx.getData();
-        for (int i = 0; i < rx.getDataLength(); i++) {
-          appendBuffer (pktBuf[i]);
-        }
-      }
-    }
-  }
-  
-  void reply (const GravitonPacket& pkt, GravitonVariant* ret)
-  {
-  }
-
-private:
-  XBee* m_xbee;
 };
 
 XBee bee;
