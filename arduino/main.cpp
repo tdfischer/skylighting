@@ -6,6 +6,8 @@
 #include "animation.h"
 #include "colors.h"
 
+SoftwareSerial dbg_ser (2, 3);
+
 class HouselightsAnimation : public Animation {
 public:
   HouselightsAnimation(LPD8806* strip) :
@@ -106,26 +108,26 @@ HouselightsAnimation houselightsAnim (&strip);
 DirectionAnimation directionAnim (&strip);
 Animation* anim (&houselightsAnim);
 
-GravitonVariant*
-do_idle(int argc, const GravitonMethodArg* argv)
+void
+do_idle(unsigned char argc, const GravitonMethodArg* argv, GravitonVariant* ret)
 {
   anim = &idleAnim;
-  return NULL;
+  dbg_ser.println ("Idle!");
 }
 
-GravitonVariant*
-do_directional(int argc, const GravitonMethodArg* argv)
+void
+do_directional(unsigned char argc, const GravitonMethodArg* argv, GravitonVariant* ret)
 {
   animLoops = 15;
   anim = &directionAnim;
-  return NULL;
+  dbg_ser.println ("Directional!");
 }
 
-GravitonVariant*
-do_houselights(int argc, const GravitonMethodArg* argv)
+void
+do_houselights(unsigned char argc, const GravitonMethodArg* argv, GravitonVariant* ret)
 {
   anim = &houselightsAnim;
-  return NULL;
+  dbg_ser.println ("House Lights!");
 }
 
 GravitonMethod methods[] = {
@@ -134,12 +136,51 @@ GravitonMethod methods[] = {
   { "houselights", do_houselights }
 };
 
-GravitonService services[] = {
+GravitonService services[2] = {
   {
     "net.phrobo.brilliance.linear",
     3,
     methods
+  },
+  Graviton::introspectionService
+};
+
+class GravitonStreamReader : public GravitonReader {
+public:
+  GravitonStreamReader (Stream& s) :
+    m_stream (s)
+  {}
+
+  void serialEvent()
+  {
+    while (m_stream.available()) {
+      char c = m_stream.read();
+      if (c == -1) {
+        resetParser();
+      } else {
+        appendBuffer (c);
+      }
+    }
   }
+
+  void reply (const GravitonPacket& pkt, GravitonVariant* ret)
+  {
+    uint8_t b = ret->type;
+    m_stream.write ((uint8_t*)&b, sizeof (b));
+    switch (ret->type) {
+      case GravitonVariant::Null:
+        break;
+      case GravitonVariant::Integer:
+        m_stream.write ((uint8_t*)&ret->value.asInt, sizeof (ret->value.asInt));
+        break;
+      case GravitonVariant::String:
+        m_stream.write ((uint8_t*)ret->value.asString, strlen (ret->value.asString)+1);
+        break;
+    }
+  }
+
+private:
+  Stream& m_stream;
 };
 
 class GravitonXBeeReader : public GravitonReader {
@@ -173,16 +214,18 @@ private:
 };
 
 XBee bee;
-
 GravitonXBeeReader reader (&bee);
 
-Graviton graviton (&reader, services, 1);
+//GravitonStreamReader reader (Serial);
 
-SoftwareSerial ser (2, 3);
+Graviton graviton (&reader, services, 2);
 
 void setup() {
-  ser.begin (9600);
-  bee.setSerial (ser);
+  dbg_ser.begin (9600);
+  dbg_ser.println ( F ("Boot"));
+
+  Serial.begin (9600);
+  //bee.setSerial (Serial);
   strip.begin();
   randomSeed (analogRead(0));
   idleAnim.hue = random (255);
@@ -193,6 +236,8 @@ void setup() {
   }
   strip.show();
 }
+
+int loopNum;
 
 void loop()
 {

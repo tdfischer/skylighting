@@ -2,11 +2,20 @@
 #include <Stream.h>
 
 struct GravitonVariant {
-  GravitonVariant(const char* str) :
-    type (Integer),
+  GravitonVariant() :
+    type (Null),
+    value (nullptr) {}
+
+  explicit GravitonVariant(const char* str) :
+    type (String),
     value (str) {}
 
+  explicit GravitonVariant(int i) :
+    type(Integer),
+    value(i) {}
+
   enum Type {
+    Null,
     Integer,
     String
   };
@@ -17,6 +26,7 @@ struct GravitonVariant {
     int asInt;
     const char *asString;
     v(const char* str) : asString (str) {}
+    v(int i) : asInt (i) {}
   } value;
 };
 
@@ -28,22 +38,32 @@ struct GravitonMethodArg {
   } value;
 };
 
-typedef GravitonVariant* (*GravitonMethodFunc)(int argc, const GravitonMethodArg* argv);
+typedef void (*GravitonMethodFunc)(unsigned char argc, const GravitonMethodArg* argv, GravitonVariant* ret);
+
+#ifndef GRAVITON_METHOD_NAME_MAXLEN
+#define GRAVITON_METHOD_NAME_MAXLEN 16
+#endif // GRAVITON_METHOD_NAME_MAXLEN
 
 struct GravitonMethod {
-  const char name[16];
+  const char name[GRAVITON_METHOD_NAME_MAXLEN];
   const GravitonMethodFunc func;
 };
 
+#ifndef GRAVITON_SERVICE_NAME_MAXLEN
+#define GRAVITON_SERVICE_NAME_MAXLEN 35
+#endif // GRAVITON_SERVICE_NAME_MAXLEN
+
 struct GravitonService {
-  const char name[48];
-  int methodCount;
+  const char name[GRAVITON_SERVICE_NAME_MAXLEN];
+  unsigned char methodCount;
   const GravitonMethod* methods;
+
+  GravitonMethod& methodByIdx(unsigned char idx) const;
 };
 
 struct GravitonMethodCallPayload {
-  char serviceName[48];
-  char methodName[16];
+  unsigned char serviceIdx;
+  unsigned char methodIdx;
   GravitonMethodArg args[5];
 };
 
@@ -53,11 +73,22 @@ struct GravitonPropertySetPayload {
 struct GravitonPropertyGetPayload {
 };
 
+struct GravitonFindServicePayload {
+  char name[GRAVITON_SERVICE_NAME_MAXLEN+1];
+};
+
+struct GravitonFindMethodPayload {
+  unsigned char serviceIdx;
+  char name[GRAVITON_METHOD_NAME_MAXLEN];
+};
+
 struct GravitonPacket {
   GravitonPacket();
 
   bool valid;
   enum Type {
+    FindService,
+    FindMethod,
     MethodCall,
     PropertyGet,
     PropertySet
@@ -66,6 +97,8 @@ struct GravitonPacket {
   Type type;
 
   union {
+    GravitonFindServicePayload findService;
+    GravitonFindMethodPayload findMethod;
     GravitonPropertySetPayload propertySet;
     GravitonPropertyGetPayload propertyGet;
     GravitonMethodCallPayload methodCall;
@@ -76,47 +109,58 @@ struct GravitonPacket {
 
 class GravitonReader {
 public:
+  enum ParserState {
+    Empty,
+    FindServiceName,
+    FindMethodServiceIdx,
+    FindMethodName,
+    MethodCallServiceIdx,
+    MethodCallMethodIdx,
+    Done
+  };
+
   GravitonReader();
   void handleBuffer();
   bool hasPacket();
   GravitonPacket& readPacket();
   virtual void reply (const GravitonPacket& pkt, GravitonVariant* ret) = 0;
-
-  enum ParserState {
-    Empty,
-    MethodCallLength,
-    MethodCallName,
-    Done
-  };
+  ParserState parserState() const;
+  void resetParser();
 
 protected:
   void appendBuffer(unsigned char c);
 
 private:
-  String m_buf;
+  void parseString(char* buf, unsigned char c, unsigned int maxSize);
+
   unsigned char m_streamBuf[128];
   int m_bufHead;
   int m_bufTail;
   int m_curPacketBuf;
+  unsigned int m_parserBufIdx;
   int m_lastPacketBuf;
   GravitonPacket m_packets[PACKET_RINGBUF_SIZE];
   ParserState m_parserState;
-  int m_tokenLength;
 };
 
 class Graviton {
 public:
-  Graviton(GravitonReader* reader, const GravitonService* services, int serviceCount);
+  Graviton(GravitonReader* reader, const GravitonService* services, unsigned char serviceCount);
 
   void setProperty(const GravitonPropertySetPayload& payload);
-  void getProperty(const GravitonPropertyGetPayload& payload);
-  GravitonVariant* callMethod(const GravitonMethodCallPayload& payload);
+  void getProperty(const GravitonPropertyGetPayload& payload) const;
+  void callMethod(const GravitonMethodCallPayload& payload, GravitonVariant* ret);
+  void findService(const GravitonFindServicePayload& payload, GravitonVariant* ret) const;
+  void findMethod(const GravitonFindMethodPayload& payload, GravitonVariant* ret) const;
   void loop();
+
+  GravitonService& serviceByIdx(unsigned char idx) const;
+
+  static const GravitonService introspectionService;
 
 private:
   String m_buf;
   GravitonReader* m_reader;
   const GravitonService* m_services;
-  const int m_serviceCount;
+  const unsigned char m_serviceCount;
 };
-
