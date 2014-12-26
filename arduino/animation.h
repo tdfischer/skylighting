@@ -2,23 +2,27 @@
 
 class Animation {
 public:
-  Animation(LPD8806* strip, int frames = 0, int framerate = 1);
+  Animation() :
+    m_finished (false)
+  {}
 
   virtual void redraw() = 0;
-  void step();
-  int idx() const;
-  void reset();
-  void end();
-  bool isFinished() const;
-  int frames() const;
+  void step()
+  {
+    m_idx++;
+    redraw();
+  }
 
-  LPD8806& strip() const;
+  uint8_t idx() const {return m_idx;}
+  void reset()
+  {
+    m_idx = 0;
+    m_finished = false;
+  }
+  bool isFinished() const {return m_finished;}
 
-private:
-  LPD8806* m_strip;
-  int m_frames;
-  int m_idx;
-  int m_framerate;
+protected:
+  uint8_t m_idx;
   bool m_finished;
 };
 
