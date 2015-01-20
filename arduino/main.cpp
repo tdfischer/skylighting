@@ -107,7 +107,7 @@ public:
 DropAnimation idleAnim;
 HouselightsAnimation houselightsAnim;
 DirectionAnimation directionAnim;
-Animation* anim (&houselightsAnim);
+Animation* anim (&idleAnim);
 
 void
 do_idle(unsigned char argc, const GravitonMethodArg* argv, GravitonVariant* ret)
