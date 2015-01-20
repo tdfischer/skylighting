@@ -7,7 +7,7 @@ public:
   {}
 
   virtual void redraw() = 0;
-  void step()
+  virtual void step()
   {
     m_idx++;
     redraw();
@@ -25,5 +25,4 @@ protected:
   uint8_t m_idx;
   bool m_finished;
 };
-
 
