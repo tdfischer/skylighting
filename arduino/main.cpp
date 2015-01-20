@@ -54,52 +54,86 @@ public:
   DropAnimation() :
     Animation(),
     pos(strip.numPixels()/2),
-    dir(1),
-    width(0)
+    width(0),
+    render_func(&DropAnimation::do_starburst)
   {}
 
   uint16_t pos;
-  uint8_t dir;
   uint16_t width;
-  uint8_t hue;
+  uint16_t hue;
+  uint8_t brightness;
 
+  /**
+   * render_func: Current sub-animation to render
+   */
+  void (DropAnimation::*render_func)();
+
+  /**
+   * redraw: Redraw the current frame
+   */
   void redraw()
   {
-    uint32_t curColor = wheel (hue, 255, strip);
+    (this->*render_func)();
+  }
 
-    width += dir;
-    if (width >= strip.numPixels()) {
-      dir *= -1;
-    } else if (width == 0) {
-      for (uint8_t b = 255; b > 0; b--) {
-        curColor = wheel (hue, b, strip);
-        for(uint16_t i = 0; i < strip.numPixels(); i++) {
-          strip.setPixelColor (i, curColor);
-        }
-        strip.show();
-        delay(30);
-      }
-
-      pos += strip.numPixels() / 5;
-      hue += 255/6;
-      dir *= -1;
-
-      for (uint8_t b = 128; b > 0; b-=2) {
-        strip.setPixelColor (pos, b, b, b);
-        strip.show();
-        delay(5);
-      }
+  /**
+   * do_starburst: Initial point of light starburst animation thingee
+   */
+  void do_starburst() {
+    for (uint8_t b = 128; b > 0; b-=2) {
+      strip.setPixelColor (pos, b, b, b);
+      strip.show();
+      delay(5);
     }
 
-    pos %= strip.numPixels();
+    render_func = &DropAnimation::do_expand;
+    width = 0;
+  }
 
-    for (uint16_t i = 0; i < strip.numPixels(); i++) {
-      if (i >= (pos - width) && i <= (pos + width))
-        strip.setPixelColor (i, curColor);
+  /**
+   * do_expand: Expansion animation
+   */
+  void do_expand() {
+    width++;
+    hue++;
+    hue %= 128 * 3;
+    uint32_t curColor = wheel (hue, 255, strip);
+
+    uint16_t start, end;
+    start = max(pos - width, 0);
+    end = min(strip.numPixels(), pos + width);
+
+    for (uint16_t i = start; i < end; i++) {
+      strip.setPixelColor (i, curColor);
+    }
+
+    strip.show();
+    delay(10);
+
+    if (width >= strip.numPixels()) {
+      render_func = &DropAnimation::do_fadeout;
+    }
+  }
+
+  /**
+   * do_fadeout: Fade out animation
+   */
+  void do_fadeout() {
+    brightness--;
+    hue++;
+    hue %= 128 * 3;
+    uint32_t curColor = wheel (hue, brightness, strip);
+    for (uint16_t i = 0; i < strip.numPixels();i++) {
+      strip.setPixelColor (i, curColor);
     }
 
     strip.show();
 
+    if (brightness == 0) {
+      render_func = &DropAnimation::do_starburst;
+      pos++;
+      pos %= strip.numPixels();
+    }
     delay (10);
   }
 };
