@@ -1871,7 +1871,7 @@ Standard SMD solder jumper. Used to automate production. Two varients : Normally
 <part name="RESET" library="SparkFun" deviceset="TAC_SWITCH" device="SMD"/>
 <part name="JP7" library="SparkFun" deviceset="M02" device="PTH"/>
 <part name="C1" library="phrobo" deviceset="UWT0J221MCL1GB" device="" value="220uF"/>
-<part name="D1" library="adafruit" deviceset="DIODE" device="SMA"/>
+<part name="D1" library="adafruit" deviceset="DIODE" device="SOD-323F"/>
 <part name="VCC/+5V" library="SparkFun" deviceset="SOLDERJUMPER" device="NO" value="NC=+5v"/>
 </parts>
 <sheets>
@@ -2048,6 +2048,28 @@ Standard SMD solder jumper. Used to automate production. Two varients : Normally
 </nets>
 </sheet>
 </sheets>
+<errors>
+<approved hash="202,1,172.72,15.24,XBEE,DTR/DI8,,,,"/>
+<approved hash="202,1,220.98,20.32,XBEE,VREF,,,,"/>
+<approved hash="104,1,101.6,88.9,U1,VIN,VCC,,,"/>
+<approved hash="104,1,101.6,91.44,U1,GND1,GND,,,"/>
+<approved hash="204,1,101.6,93.98,U1,GND2,,,,"/>
+<approved hash="104,1,101.6,96.52,U1,5V,N$7,,,"/>
+<approved hash="204,1,101.6,99.06,U1,3V,,,,"/>
+<approved hash="113,1,176.627,126.891,CLOCK,,,,,"/>
+<approved hash="113,1,166.467,127.279,DATA,,,,,"/>
+<approved hash="113,1,82.0735,64.6726,+5V/VCC,,,,,"/>
+<approved hash="113,1,43.4594,36.7326,GND,,,,,"/>
+<approved hash="113,1,47.0323,100.461,JP1,,,,,"/>
+<approved hash="113,1,26.7123,100.461,JP2,,,,,"/>
+<approved hash="113,1,46.9477,113.161,JP3,,,,,"/>
+<approved hash="113,1,46.9477,125.861,JP4,,,,,"/>
+<approved hash="113,1,26.7123,113.161,JP5,,,,,"/>
+<approved hash="113,1,26.7123,125.861,JP6,,,,,"/>
+<approved hash="113,1,81.28,106.291,RESET,,,,,"/>
+<approved hash="113,1,32.3427,86.5547,JP7,,,,,"/>
+<approved hash="113,1,60.96,64.6769,D1,,,,,"/>
+</errors>
 </schematic>
 </drawing>
 </eagle>
