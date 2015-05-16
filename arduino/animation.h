@@ -1,4 +1,4 @@
-#include <LPD8806.h>
+#include <stdint.h>
 
 class Animation {
 public:
