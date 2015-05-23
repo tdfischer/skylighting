@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/p5.js/0.4.4/p5.js"></script>
+<style>
+<!--
+body {
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  overflow: hidden;
+}
+canvas {
+}
+-->
+</style>
+<script>
+<!--
+
+var beaconSize = 40;
+var nodeCount = 250;
+var beaconCount = 5;
+var canvasSize;
+var nodes = [];
+var nodeSize = 20;
+var maxDist = 50;
+var drawRange = false;
+
+function setup() {
+  canvasSize = min(windowWidth-40, windowHeight-40);
+  createCanvas(canvasSize, canvasSize);
+  colorMode(RGB);
+  frameRate(60);
+  background(0);
+  noStroke();
+
+  for(var i = 0; i < nodeCount; i++) {
+    var x = random(0, canvasSize);
+    var y = random(0, canvasSize);
+    var nodeColor = [random(0, 255), random(0, 255), random(0, 255)];
+    nodes.push({
+      x: x,
+      y: y,
+      color: nodeColor,
+      beacon: false,
+      xvec: 5 - random(0, 10),
+      yvec: 5 - random(0, 10),
+      baseColor: nodeColor
+    });
+  }
+
+  for(var i = 0; i < beaconCount; i++) {
+    var x = random(0, canvasSize);
+    var y = random(0, canvasSize);
+    nodes.push({x: x, y: y, color: [random(0, 255), random(0, 255), random(0,
+          255)], beacon: true});
+  }
+}
+
+function getNeighborColors(x, y) {
+  var neighborColors = [];
+  for(var i = 0; i < nodes.length; i++) {
+    var node = nodes[i];
+    if (node.beacon) {
+      if (dist(x, y, node.x, node.y) <= maxDist*2) {
+        neighborColors.push(node.color);
+      }
+    } else {
+      if (dist(x, y, node.x, node.y) <= maxDist) {
+        neighborColors.push(node.color);
+      }
+    }
+  };
+  return neighborColors;
+}
+
+function averageColors(neighbors) {
+  var newColor = neighbors[0].slice(0);
+  $(neighbors).each(function(idx, c) {
+      if (idx == 0)
+        return;
+      newColor[0] += c[0];
+      newColor[1] += c[1];
+      newColor[2] += c[2];
+  });
+  newColor[0] = newColor[0] / neighbors.length;
+  newColor[1] = newColor[1] / neighbors.length;
+  newColor[2] = newColor[2] / neighbors.length;
+  return newColor;
+}
+
+function draw() {
+  fill('rgba(0, 0, 0, 0.4)');
+  rect(0, 0, canvasSize, canvasSize);
+  for(var idx = 0; idx < nodes.length; idx++) {
+    var node = nodes[idx];
+    fill(node.color);
+    if (node.beacon) {
+      ellipse(node.x, node.y, beaconSize, beaconSize);
+    } else {
+      ellipse(node.x, node.y, nodeSize, nodeSize);
+    }
+    if (drawRange) {
+      stroke(0);
+    }
+    noFill();
+    ellipse(node.x, node.y, maxDist*2, maxDist*2);
+    noStroke();
+    if (!node.beacon) {
+      var neighbors = getNeighborColors(node.x, node.y);
+      neighbors.push(node.baseColor);
+      if (neighbors.length >= 2) {
+        var newColor = averageColors(neighbors);
+        node.color = newColor.slice(0);
+      } else {
+        if (random(0, 100) <= 5) {
+          node.color = node.baseColor;
+        } else {
+          node.color = lerpColor(node.color, node.baseColor, 0.55);
+        }
+      }
+      node.x += node.xvec;
+      node.y += node.yvec;
+      if (node.x > canvasSize + maxDist) {
+        node.x = -maxDist;
+      }
+      if (node.x < -maxDist) {
+        node.x = canvasSize + maxDist;
+      }
+      if (node.y > canvasSize + maxDist) {
+        node.y = -maxDist;
+      }
+      if (node.y < -maxDist) {
+        node.y = canvasSize + maxDist;
+      }
+      node.xvec = max(-5, min(5, node.xvec + (1 - random(0, 2))));
+      node.yvec = max(-5, min(5, node.yvec + (1 - random(0, 2))));
+    }
+  };
+}
+-->
+</script>
