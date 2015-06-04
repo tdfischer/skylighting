@@ -1,0 +1,5 @@
+*.b#*
+*.swp
+*.out
+*.hex
+*.tap
