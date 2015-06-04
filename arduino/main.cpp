@@ -10,21 +10,32 @@
 SoftwareSerial dbg_ser (2, 3);
 #endif // DEBUG
 
-#define LED_COUNT 346
-#define LED_COUNT 93
+// Test strip
+//#define LED_COUNT 93
+
+// Front glass case at Noisebridge
+//#define LED_COUNT 32
+
+// Noisebridge's big Noise^^2 table
+//#define LED_COUNT 287
+
+// Lights above the bike rack at Noisebridge
+//#define LED_COUNT 120
+
 #define LED_COUNT 28
+
 CRGB leds[LED_COUNT];
 
-static void fadeLEDSegment(uint16_t idx, CRGB goal, int width)
+static void fadeLEDSegment(uint16_t idx, CRGB goal, int width, int pause=1)
 {
   CRGB start = leds[idx];
-  for(fract8 i = 0; i < 255; i++) {
+  for(fract8 i = 0; i < 255; i+=5) {
     CRGB blended = blend(start, goal, ease8InOutCubic(i));
     for (uint16_t segmentIdx = idx; segmentIdx <= idx + width; segmentIdx++) {
       leds[segmentIdx] = blended;
     }
     FastLED.show();
-    delay(10);
+    FastLED.delay(pause);
   }
 }
 
@@ -70,13 +81,29 @@ public:
   }
 };
 
+class ThrobAnimation : public Animation {
+public:
+  ThrobAnimation() :
+    Animation()
+  {
+  }
+
+  void redraw()
+  {
+    fadeLEDSegment(0, CHSV(245+random(0, 20), random(200, 255), random(200, 255)), LED_COUNT, 60);
+  }
+};
+
 class TwinkleAnimation : public Animation {
 public:
   TwinkleAnimation() :
     Animation(),
     render_func(&TwinkleAnimation::do_fill),
-    nextColor(0, 255, 255)
-  {}
+    nextColor(0, 255, 255),
+    iterations(0)
+  {
+    nextColor = CHSV(random(0, 255), 255, 255);
+  }
 
   void (TwinkleAnimation::*render_func)();
   CHSV nextColor;
@@ -89,12 +116,8 @@ public:
 
   void do_fill()
   {
-    for (uint16_t i = 0; i < LED_COUNT; i++) {
-      leds[i] = CRGB::White;
-    }
-    FastLED.show();
+    fadeLEDSegment(0, CRGB::White, LED_COUNT);
     fadeLEDSegment(0, CRGB::Black, LED_COUNT);
-    nextColor = CHSV(random(0, 255), 255, 255);
     render_func = &TwinkleAnimation::do_random_shift;
   }
 
@@ -103,9 +126,9 @@ public:
     uint16_t pixelIdx = random(0, LED_COUNT);
     fadeLED(pixelIdx, nextColor);
     iterations++;
-    if (iterations == 100) {
-      nextColor.h += random(20, 30);
-      nextColor.s = max(nextColor.s+random(10, 30), 100);
+    if (iterations >= LED_COUNT * 2) {
+      //nextColor.h += random(20, 30);
+      nextColor.s = max(nextColor.s+random(10, 30), 200);
       iterations = 0;
     }
   }
@@ -147,7 +170,7 @@ public:
     for (uint8_t b = 128; b > 0; b-=2) {
       leds[pos] = CHSV(255, 0, b);
       FastLED.show();
-      delay(5);
+      FastLED.delay(5);
     }
 
     render_func = &DropAnimation::do_expand;
@@ -203,7 +226,8 @@ DropAnimation idleAnim;
 HouselightsAnimation houselightsAnim;
 DirectionAnimation directionAnim;
 TwinkleAnimation twinkleAnim;
-Animation* anim (&twinkleAnim);
+ThrobAnimation throbAnim;
+Animation* anim (&throbAnim);
 
 void
 do_idle(unsigned char argc, const GravitonMethodArg* argv, GravitonVariant* ret)
