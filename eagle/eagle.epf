@@ -8,7 +8,11 @@ Desktop="Desktop"
 [Globals]
 AutoSaveProject=1
 UsedLibrary="/home/tdfischer_/Projects/phrobo/eagle/library/SparkFun-RF.lbr"
+UsedLibrary="/home/tdfischer_/Projects/phrobo/eagle/library/SparkFun.lbr"
 UsedLibrary="/home/tdfischer_/Projects/phrobo/eagle/library/adafruit.lbr"
+UsedLibrary="/home/tdfischer_/Projects/phrobo/eagle/library/at86rf231.lbr"
+UsedLibrary="/home/tdfischer_/Projects/phrobo/eagle/library/attiny48-dip.lbr"
+UsedLibrary="/home/tdfischer_/Projects/phrobo/eagle/library/attiny48.lbr"
 UsedLibrary="/home/tdfischer_/Projects/phrobo/eagle/library/ohw-logo.lbr"
 UsedLibrary="/home/tdfischer_/Projects/phrobo/eagle/library/phrobo.lbr"
 UsedLibrary="/home/tdfischer_/Projects/phrobo/eagle/library/synhak.lbr"
@@ -353,7 +357,7 @@ UsedLibrary="/opt/buildenv/eagle/lbr/zilog.lbr"
 
 [Win_1]
 Type="Control Panel"
-Loc="0 0 599 399"
+Loc="0 27 599 426"
 State=1
 Number=0
 
